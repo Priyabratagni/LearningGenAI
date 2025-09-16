@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
-import os
-from google import genai
+from openai import OpenAI
+import json
 
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-client = genai.Client(api_key=api_key)
+
+client = OpenAI()
 
 systempromt = """
 You are an AI assistant who is Expert in breaking down complex problems and then resolve the user query.
@@ -33,16 +33,26 @@ Output: {{ step: "validate", "content": "seems like 4 is correct answer for 2 + 
 Output: {{ step: "results", "content": "2 + 2 = 4 and that is calculated by adding all the numbers" }}
 """
 
-response = client.models.generate_content(
-    model = "gemini-2.0-flash",
-    contents=[
-        systempromt,
-       "What is 3 + 4 * 5?"
+result = client.chat.completions.create(
+    model="gpt-4o",
+    response_format={"type": "json_object"},
+    messages=[
+        {"role": "system", "content": systempromt},
+        {"role": "user", "content": "What is 3 + 5 * 2?"},
 
-       #
-       {"role": "assistant", "content": json.dumps({"step": "analyse", "content": "The user is asking to solve a mathematical expression involving addition and multiplication. We need to follow the order of operations (PEMDAS/BODMAS) to get the correct answer." })}
+        #
+        {"role": "assistant", "content": json.dumps({"step": "analyse", "content": "The user is asking about the arithmetic expression involving both addition and multiplication: 3 + 5 * 2. This requires understanding the order of operations."})},
+        {"role": "assistant", "content": json.dumps({"step": "think", "content": "I need to recall the order of operations, which is usually summarized as PEMDAS/BODMAS - Parentheses/Brackets, Exponents/Orders, Multiplication and Division (from left to right), Addition and Subtraction (from left to right)."})},
+        {"role": "assistant", "content": json.dumps({"step": "think", "content": "According to the order of operations, multiplication should be performed before addition."})},
+        {"role": "assistant", "content": json.dumps({"step": "think", "content": "First, I will evaluate the multiplication part of the expression: 5 * 2."})},
+        {"role": "assistant", "content": json.dumps({"step": "output", "content": "5 * 2 = 10"})},
+        {"role": "assistant", "content": json.dumps({"step": "think", "content": "Now, I will perform the addition part of the expression: 3 + 10."})},
+        {"role": "assistant", "content": json.dumps({"step": "output", "content": "3 + 10 = 13"})},
+        {"role": "assistant", "content": json.dumps({"step": "validate", "content": "The evaluation followed the correct order of operations: first multiplication, then addition, resulting in 13."})},
+        {"role": "assistant", "content": json.dumps({"step": "results", "content": "3 + 5 * 2 = 13 has been calculated following the proper mathematical order of operations: multiplication before addition."})},
+        
+
     ]
-
 )
 
-print(response.text)
+print(result.choices[0].message.content)

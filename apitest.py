@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from openai import OpenAI
+from myscript_test import OpenAI
 
 load_dotenv()
 
